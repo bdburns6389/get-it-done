@@ -17,18 +17,31 @@ class Task(db.Model):
     def __init__(self,name):
         self.name = name
 
-tasks = []
+
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
     
-    if request.method == 'POST':
-        task = request.form['task']
-        tasks.append(task)
+    if request.method == 'POST': #if data is received from html template
+        task_name = request.form['task']
+        new_task = Task(task_name) #uses Task object to create entry in db
+        db.session.add(new_task) #SQLAlchemy adds new_task to database
+        db.session.commit() #necessary to actually add to assigned database
+
 
     tasks= Task.query.all()
 
     return render_template('todos.html', title="Get it Done!", tasks=tasks)
+
+@app.route('/delete-task', methods=['POST'])
+def delete_task():
+
+    task_id = int(request.form['task-id'])
+    task = Task.query.get(task_id)
+    db.session.delete(task)
+    db.session.commit()
+
+    return redirect('/')
 
 if __name__ == "__main__":
     app.run()
