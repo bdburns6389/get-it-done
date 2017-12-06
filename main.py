@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template, session
+from flask import Flask, request, redirect, render_template, session, flash
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -45,10 +45,10 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.password == password:
             session['email'] = email
+            flash('Logged In') #Allows message on screen that will be cleared after reload (I think)
             return redirect('/')
         else:
-            #TODO-->
-            pass
+            flash('User Password Incorrect, or User Does Not Exist', 'error')
     return render_template('login.html')
 
 @app.route('/register', methods=['POST', 'GET'])
