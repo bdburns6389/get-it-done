@@ -15,16 +15,19 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     completed = db.Column(db.Boolean)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id')) #Links Task table to User table to allow one to many relationship
 
-    def __init__(self,name):
+    def __init__(self,name, owner):
         self.name = name
         self.completed = False
+        self.owner = owner
 
 class User(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120))
     password = db.Column(db.String(120), unique=True)
+    tasks = db.relationship('Task', backref='owner') #Lets SQL know that this is linked to Task table/class
 
     def __init__(self, email, password):
         self.email = email
@@ -81,15 +84,18 @@ def logout():
 @app.route('/', methods=['POST', 'GET'])
 def index():
     
+    owner = User.query.filter_by(email=session['email']).first() #pulls session email from above as a way to link user with Task.
+
+
     if request.method == 'POST': #if data is received from html template
         task_name = request.form['task']
-        new_task = Task(task_name) #uses Task object to create entry in db
+        new_task = Task(task_name, owner) #uses Task object to create entry in db
         db.session.add(new_task) #SQLAlchemy adds new_task to database
         db.session.commit() #necessary to actually add to assigned database
 
 
-    tasks= Task.query.filter_by(completed=False).all()
-    completed_tasks = Task.query.filter_by(completed=True).all()
+    tasks= Task.query.filter_by(completed=False, owner=owner).all()
+    completed_tasks = Task.query.filter_by(completed=True, owner=owner).all()
     return render_template('todos.html', title="Get it Done!", tasks=tasks, 
         completed_tasks=completed_tasks)
 
